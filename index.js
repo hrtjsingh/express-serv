@@ -32,33 +32,29 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const PORT = 4001;
 
-// Directory to save downloaded PDFs
 const downloadsDir = path.join(__dirname, 'downloads');
 
-// Create the downloads directory if it doesn't exist
 if (!fs.existsSync(downloadsDir)) {
   fs.mkdirSync(downloadsDir);
 }
 
-// Endpoint to download and save PDF
 app.post('/download-pdf', async (req, res) => {
   const { pdfUrl } = req.body;
 
   try {
-    // Fetch PDF file from the provided URL
-    const response = await axios.get(pdfUrl, {
+
+    const pdf = await axios.get(pdfUrl);
+    console.log(pdf.data.pdfUrl)
+    const response = await axios.get(pdf.data?.pdfUrl, {
       responseType: 'stream'
     });
 
-    // Generate a unique filename for the downloaded PDF
     const filename = `${uuidv4()}.pdf`;
     const filePath = path.join(downloadsDir, filename);
 
-    // Create a writable stream to save the PDF file
     const writer = fs.createWriteStream(filePath);
     response.data.pipe(writer);
 
-    // Return the URL of the saved PDF file
     writer.on('finish', () => {
       const serverPdfUrl = `${req.protocol}://${req.get('host')}/downloads/${filename}`;
       res.json({ serverPdfUrl });
